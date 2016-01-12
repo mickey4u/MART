@@ -345,6 +345,7 @@ public class KeContactP20Handler extends BaseThingHandler {
 							&& selKey == theSelectionKey) {
 
 						boolean error = false;
+						//sets the position back to 0, so you can reread all the data in the buffer
 						buffer.rewind();
 
 						try {
@@ -353,6 +354,7 @@ public class KeContactP20Handler extends BaseThingHandler {
 									new Object[] { new String(buffer.array()),
 											theChannel.getLocalAddress(),
 											theChannel.getRemoteAddress() });
+							//read from buffer into channel
 							theChannel.write(buffer);
 						} catch (NotYetConnectedException e) {
 							updateStatus(ThingStatus.OFFLINE,
