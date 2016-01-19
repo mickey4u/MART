@@ -23,6 +23,7 @@ import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -33,11 +34,13 @@ import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
+import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Sets;
 import com.google.gson.JsonParseException;
 
 /**
@@ -49,6 +52,8 @@ import com.google.gson.JsonParseException;
 public class martHandler extends BaseThingHandler {
 
     private Logger logger = LoggerFactory.getLogger(martHandler.class);
+
+    public final static Set<ThingTypeUID> SUPPORTTED_THING_TYPES = Sets.newHashSet(THING_TYPE_MART_ADAPTER);
 
     /**
      * A Selector is a Java NIO component which can examine one or more NIO Channel's, and determine which channels are
@@ -64,7 +69,7 @@ public class martHandler extends BaseThingHandler {
      * Instead you send and receive packets of data.
      */
     private DatagramChannel datagramChannel = null;
-    protected DatagramChannel listernerChannel = null;
+    protected DatagramChannel listenerChannel = null;
     /**
      * A token representing the registration of a SelectableChannel with a Selector.
      * A selection key is created each time a channel is registered with a selector.
@@ -91,6 +96,8 @@ public class martHandler extends BaseThingHandler {
     public static final int REMOTE_PORT_NUMBER = 7090;
     public static final int PING_TIME_OUT = 3000;
     public static final int BUFFER_SIZE = 1024;
+
+    public static final String ADDRESS = null;
 
     public martHandler(Thing thing) {
         super(thing);
@@ -205,14 +212,14 @@ public class martHandler extends BaseThingHandler {
 
         // opening the listener port which can receive packets on UDP port listenerPort passed to the function
         try {
-            listernerChannel = DatagramChannel.open();
+            listenerChannel = DatagramChannel.open();
             // used to establish an association between the socket and a local address
             // once the association is established the socket remains bound until the socket is closed
-            listernerChannel.bind(new InetSocketAddress(listenerPort));
+            listenerChannel.bind(new InetSocketAddress(listenerPort));
             // The Channel must be in non-blocking mode to be used with a Selector
-            listernerChannel.configureBlocking(false);
+            listenerChannel.configureBlocking(false);
 
-            logger.info("Listening for incoming data on {}", listernerChannel.getLocalAddress());
+            logger.info("Listening for incoming data on {}", listenerChannel.getLocalAddress());
 
             synchronized (selector) {
                 selector.wakeup();
@@ -220,7 +227,7 @@ public class martHandler extends BaseThingHandler {
                 try {
                     // Registers this channel with the given selector, returning a selection key
                     // ".validOps" returns an operation set identifying this channel's supported operations
-                    listenerKey = listernerChannel.register(selector, listernerChannel.validOps());
+                    listenerKey = listenerChannel.register(selector, listenerChannel.validOps());
                 } catch (ClosedChannelException e1) {
                     // TODO: handle exception
                     logger.error("An error occured while registering the selector: {}", e1.getMessage());
@@ -648,15 +655,15 @@ public class martHandler extends BaseThingHandler {
                             // the number of elements in the buffer between the current position and
                             // the limit is greater than zero
                             if (buffer != null && buffer.remaining() > 0) {
-                                // parse the the data read from the datagram-channel
+                                // parse the data read from the datagram-channel
                                 readerHandler(buffer, datagramChannel);
                             }
                         }
                     }
-                    ByteBuffer buffer = Reader(listernerChannel, BUFFER_SIZE,
+                    ByteBuffer buffer = Reader(listenerChannel, BUFFER_SIZE,
                             InetAddress.getByName((String) getConfig().get(IP_ADDRESS)));
                     if (buffer != null && buffer.remaining() > 0) {
-                        readerHandler(buffer, listernerChannel);
+                        readerHandler(buffer, listenerChannel);
                     }
                 }
 
