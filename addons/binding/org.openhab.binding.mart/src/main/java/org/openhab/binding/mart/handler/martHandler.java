@@ -64,12 +64,12 @@ public class martHandler extends BaseThingHandler {
      * Instead you send and receive packets of data.
      */
     private DatagramChannel datagramChannel = null;
+    protected DatagramChannel listernerChannel = null;
     /**
      * A token representing the registration of a SelectableChannel with a Selector.
      * A selection key is created each time a channel is registered with a selector.
      */
     protected SelectionKey datagramChannelKey = null;
-    protected DatagramChannel listernerChannel = null;
     protected SelectionKey listenerKey = null;
     /**
      *
@@ -90,6 +90,7 @@ public class martHandler extends BaseThingHandler {
     public static final int LISTENER_PORT_NUMBER = 7090;
     public static final int REMOTE_PORT_NUMBER = 7090;
     public static final int PING_TIME_OUT = 3000;
+    public static final int BUFFER_SIZE = 1024;
 
     public martHandler(Thing thing) {
         super(thing);
@@ -245,7 +246,7 @@ public class martHandler extends BaseThingHandler {
      * @param permittedClientAddress
      * @return
      */
-    protected ByteBuffer Reader(DatagramChannel theChannel, int bufferSize, InetSocketAddress permittedClientAddress) {
+    protected ByteBuffer Reader(DatagramChannel theChannel, int bufferSize, InetAddress permittedClientAddress) {
         // The lock() method locks the Lock instance so that all threads calling lock() are blocked until unlock() is
         // executed.
         lock.lock();
@@ -481,7 +482,7 @@ public class martHandler extends BaseThingHandler {
             // returns the thing which belongs to the handler
             // gets the status information of the thing
             // gets the detail of the status and checks if there are no configuration errors
-            // and checks of the ipAddress is not null or empty
+            // and checks if the ipAddress is not null or empty
             if (getThing().getStatusInfo().getStatusDetail() != ThingStatusDetail.CONFIGURATION_ERROR
                     && getConfig().get(IP_ADDRESS) != null || getConfig().get(IP_ADDRESS) != "") {
 
@@ -542,7 +543,6 @@ public class martHandler extends BaseThingHandler {
                                 " An excepton ocurred while connecting");
 
                     }
-
                 }
 
             } else {
@@ -624,17 +624,48 @@ public class martHandler extends BaseThingHandler {
                         // test whether the ip address is reachable in 3 seconds if it is reachable in the timeout
                         // specified, read from the channel
                         if (!InetAddress.getByName(((String) getConfig().get(IP_ADDRESS))).isReachable(PING_TIME_OUT)) {
+                            logger.debug("Ping time out after '{}' milliseconds", System.currentTimeMillis() - stamp);
+                            logger.trace("Disconnecting datagram channel '{}'", datagramChannel);
+                            try {
+                                // close the channel
+                                datagramChannel.close();
+
+                            } catch (IOException e) {
+                                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
+                                        "An error occurred while closing the channel");
+                            }
+
+                            // if the channel was closed update the thing status
+                            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
+                                    "Ping timeout occurred");
+                            // re-establish the connection
+                            onConnectionLost();
 
                         } else {
-
+                            // if the datagram channel is connected, read from the datagram-channel
+                            ByteBuffer buffer = Reader(datagramChannel, BUFFER_SIZE, null);
+                            // if the buffer is not null and
+                            // the number of elements in the buffer between the current position and
+                            // the limit is greater than zero
+                            if (buffer != null && buffer.remaining() > 0) {
+                                // parse the the data read from the datagram-channel
+                                readerHandler(buffer, datagramChannel);
+                            }
                         }
+                    }
+                    ByteBuffer buffer = Reader(listernerChannel, BUFFER_SIZE,
+                            InetAddress.getByName((String) getConfig().get(IP_ADDRESS)));
+                    if (buffer != null && buffer.remaining() > 0) {
+                        readerHandler(buffer, listernerChannel);
                     }
                 }
 
             } catch (Exception e) {
-                // TODO: handle exception
-            } finally {
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
+                        "An exception occurred while receiving data from the MART adapter");
 
+            } finally {
+                lock.unlock();
             }
         }
     };
