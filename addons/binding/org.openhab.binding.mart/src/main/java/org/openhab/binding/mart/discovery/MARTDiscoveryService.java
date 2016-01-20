@@ -97,9 +97,12 @@ public class MARTDiscoveryService extends AbstractDiscoveryService {
 
                 while (true) {
                     try {
+                        martReceivePacket = new DatagramPacket(new byte[1536], 1536);
+                        martReceiveSocket.receive(martReceivePacket);
+                        final String message = new String(martReceivePacket.getData());
 
                     } catch (Exception e) {
-                        // TODO: handle exception
+
                     }
                 }
 

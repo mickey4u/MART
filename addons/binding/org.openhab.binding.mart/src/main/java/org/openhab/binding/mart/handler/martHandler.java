@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PortUnreachableException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ClosedSelectorException;
@@ -28,6 +29,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.core.thing.ChannelUID;
@@ -689,4 +692,18 @@ public class martHandler extends BaseThingHandler {
 
         }
     };
+
+    /**
+     * post device usage data to the MART web-service
+     */
+    private void postman() throws Exception {
+        String endpoints = "";
+        URL url = new URL(endpoints);
+        HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
+
+        // add request header
+
+        // send post request
+
+    }
 }
