@@ -688,7 +688,18 @@ public class martHandler extends BaseThingHandler {
 
         @Override
         public void run() {
-            // TODO Auto-generated method stub
+            String requestCommand = "consumption data";
+
+            // create a byte buffer and allocate a capacity
+            ByteBuffer byteBuffer = ByteBuffer.allocate(requestCommand.getBytes().length);
+            try {
+                // transfers the entire content of the byte array into the byteBuffer
+                byteBuffer.put(requestCommand.getBytes("ASCII"));
+                writer(byteBuffer, datagramChannel);
+            } catch (UnsupportedEncodingException | NumberFormatException e) {
+                logger.error("An exception occurred while polling the MART adapter for '{}': {}", getThing().getUID(),
+                        e.getMessage());
+            }
 
         }
     };
