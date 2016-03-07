@@ -33,6 +33,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
@@ -110,6 +111,17 @@ public class martHandler extends BaseThingHandler {
     public void handleCommand(ChannelUID channelUID, Command command) {
         switch (channelUID.getId()) {
             case CHANNEL_STATE:
+                if (command instanceof OnOffType) {
+                    if (command == OnOffType.ON) {
+                        // send on command
+                        sendMartCommand("On");
+                    } else if (command == OnOffType.OFF) {
+                        // send off command
+                        sendMartCommand("Off");
+                    } else {
+                        return;
+                    }
+                }
                 break;
 
             case CHANNEL_POWER_CONSUMED:
@@ -122,9 +134,6 @@ public class martHandler extends BaseThingHandler {
                 break;
 
             case CHANNEL_ON_TOTAL:
-                break;
-
-            case CHANNEL_OCCUPANCY_STATUS:
                 break;
 
             default:
