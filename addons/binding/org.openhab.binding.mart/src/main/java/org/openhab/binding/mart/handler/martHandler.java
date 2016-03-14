@@ -24,6 +24,7 @@ import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
@@ -41,11 +43,15 @@ import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.types.Command;
+import org.eclipse.smarthome.core.types.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 
 /**
  * The {@link martHandler} is responsible for handling commands, which are
@@ -84,6 +90,7 @@ public class martHandler extends BaseThingHandler {
      *
      */
     private final Lock lock = new ReentrantLock();
+    protected JsonParser parser = new JsonParser();
     /**
      * these are to schedule a task to execute repeatedly with a fixed interval of time
      * in between each execution
@@ -124,29 +131,11 @@ public class martHandler extends BaseThingHandler {
                 }
                 break;
 
-            case CHANNEL_POWER_CONSUMED:
-                break;
-
-            case CHANNEL_LAST_ON_TODAY:
-                break;
-
-            case CHANNEL_ON_TODAY:
-                break;
-
-            case CHANNEL_ON_TOTAL:
-                break;
-
             default:
                 break;
         }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.eclipse.smarthome.core.thing.binding.BaseThingHandler#initialize()
-     *
-     */
     @Override
     public void initialize() {
         // TODO: Initialize the thing. If done set status to ONLINE to indicate proper working.
@@ -399,6 +388,30 @@ public class martHandler extends BaseThingHandler {
 
         // get data to update channels and to send to machine learning web-service
         try {
+            JsonObject readData = parser.parse(response).getAsJsonObject();
+
+            for (Entry<String, JsonElement> data : readData.entrySet()) {
+                switch (data.getKey()) {
+                    case "onToday":
+                        State onToday = new DecimalType(data.getValue().getAsInt());
+                        if (onToday != null) {
+                            logger.debug("", onToday, getThing().getUID());
+                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ON_TODAY), onToday);
+                        }
+                        break;
+
+                    case "onTotal":
+                        State onTotal = new DecimalType(data.getValue().getAsInt());
+                        if (onTotal != null) {
+                            logger.debug("", onTotal, getThing().getUID());
+                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ON_TOTAL), onTotal);
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+            }
 
         } catch (JsonParseException e) {
             logger.debug("Invalid JSON response: '{}'", response);

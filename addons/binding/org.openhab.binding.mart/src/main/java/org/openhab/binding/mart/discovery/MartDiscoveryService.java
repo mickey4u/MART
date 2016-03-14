@@ -4,6 +4,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
 import java.util.Set;
 
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
@@ -70,6 +71,10 @@ public class MartDiscoveryService extends AbstractDiscoveryService {
             InetSocketAddress srcAddress = new InetSocketAddress(localhost, SSDP_SEARCH_PORT);
             InetSocketAddress dstAddress = new InetSocketAddress(InetAddress.getByName(SSDP_IP), SSDP_PORT);
 
+            DatagramPacket discoveryPacket = null;
+
+            // send multicast packet
+
             // Response Listener
             DatagramSocket martReceiveSocket = null;
             DatagramPacket receivePacket = null;
@@ -80,6 +85,28 @@ public class MartDiscoveryService extends AbstractDiscoveryService {
                 martReceiveSocket.setSoTimeout(TIMEOUT);
                 logger.debug("Send datagram packet.");
                 martReceiveSocket.send(discoveryPacket);
+
+                while (true) {
+                    try {
+                        receivePacket = new DatagramPacket(new byte[1536], 1536);
+                        martReceiveSocket.receive(receivePacket);
+                        final String message = new String(receivePacket.getData());
+                        logger.trace("Received message: {}", message);
+
+                        new Thread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                // TODO Auto-generated method stub
+
+                            }
+                        }).start();
+                    } catch (SocketTimeoutException e) {
+                        // TODO: handle exception
+                    }
+
+                }
+
             } finally {
                 if (martReceiveSocket != null) {
                     martReceiveSocket.disconnect();
