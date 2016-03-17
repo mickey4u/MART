@@ -24,6 +24,9 @@ public class martBindingConstants {
 
     // List of all Channel ids
     public final static String CHANNEL_STATE = "state";
+    public final static String CHANNEL_FRIDGE = "fridgeState";
+    public final static String CHANNEL_OUTSIDE_LIGHT = "outsideLightState";
+    public final static String CHANNEL_TELEVISION = "televisionState";
     public final static String CHANNEL_POWER_CONSUMED = "powerConsumed";
     public final static String CHANNEL_LAST_ON_TODAY = "lastOnFor";
     public final static String CHANNEL_ON_TODAY = "onToday";

@@ -10,7 +10,10 @@
 		<channels>
 			<channel typeId="powerConsumedType" id="powerConsumed" />
 			<channel typeId="stateType" id="state" />
-			<channel typeId="lastOnForType" id="lastOnFor"></channel>
+			<channel typeId="fridgeType" id="fridgeState" />
+			<channel typeId="outsideLightType" id="outsideLightState" />
+			<channel typeId="televisionType" id="televisionState" />
+			<channel typeId="lastOnForType" id="lastOnFor" />
 			<channel typeId="onTodayType" id="onToday" />
 			<channel typeId="onTotalType" id="onTotal" />
 			<channel typeId="occupancyStatus" id="occupiedState" />
@@ -28,7 +31,7 @@
 				<default>15</default>
 			</parameter>
 		</config-description>
-		
+
 	</thing-type>
 
 	<!-- Mart Channel Types -->
@@ -43,6 +46,21 @@
 		<label>Switch</label>
 		<description>Turns the adapter on and off</description>
 		<category>Switch</category>
+	</channel-type>
+	<channel-type id="fridgeType">
+		<item-type>Switch</item-type>
+		<label>Fridge Switch</label>
+		<description>Turns the fridge on and off</description>
+	</channel-type>
+	<channel-type id="outsideLightType">
+		<item-type>Switch</item-type>
+		<label>Outside Light Switch</label>
+		<description>Turns the outside light on or off</description>
+	</channel-type>
+	<channel-type id="televisionType">
+		<item-type>Switch</item-type>
+		<label>Television Switch</label>
+		<description>Turns the television on or off</description>
 	</channel-type>
 	<channel-type id="lastOnForType">
 		<item-type>Number</item-type>

@@ -118,13 +118,56 @@ public class martHandler extends BaseThingHandler {
     public void handleCommand(ChannelUID channelUID, Command command) {
         switch (channelUID.getId()) {
             case CHANNEL_STATE:
+                // check if the command is an ON/OFF command
                 if (command instanceof OnOffType) {
                     if (command == OnOffType.ON) {
                         // send on command
-                        sendMartCommand("On");
+                        sendMartCommand("On Adapter");
                     } else if (command == OnOffType.OFF) {
                         // send off command
-                        sendMartCommand("Off");
+                        sendMartCommand("Off Adapter");
+                    } else {
+                        return;
+                    }
+                }
+                break;
+            case CHANNEL_FRIDGE:
+                // check if the command is an ON/OFF command
+                if (command instanceof OnOffType) {
+                    if (command == OnOffType.ON) {
+                        // send on command
+                        sendMartCommand("On Fridge");
+                    } else if (command == OnOffType.OFF) {
+                        // send off command
+                        sendMartCommand("Off Fridge");
+                    } else {
+                        return;
+                    }
+                }
+                break;
+            case CHANNEL_OUTSIDE_LIGHT:
+                // check if the command is an ON/OFF command
+                if (command instanceof OnOffType) {
+                    if (command == OnOffType.ON) {
+                        // send on command
+                        sendMartCommand("On Outside Light");
+                    } else if (command == OnOffType.OFF) {
+                        // send off command
+                        sendMartCommand("Off Outside Light");
+                    } else {
+                        return;
+                    }
+                }
+                break;
+            case CHANNEL_TELEVISION:
+                // check if the command is an ON/OFF command
+                if (command instanceof OnOffType) {
+                    if (command == OnOffType.ON) {
+                        // send on command
+                        sendMartCommand("On Television");
+                    } else if (command == OnOffType.OFF) {
+                        // send off command
+                        sendMartCommand("Off Television");
                     } else {
                         return;
                     }
@@ -200,8 +243,36 @@ public class martHandler extends BaseThingHandler {
 
     @Override
     public void dispose() {
-        // TODO Auto-generated method stub
-        super.dispose();
+        try {
+            selector.close();
+        } catch (IOException e) {
+            logger.error("An exception occurred while closing the selector: '{}'", e.getMessage());
+        }
+
+        try {
+            datagramChannel.close();
+        } catch (IOException e) {
+            logger.warn("An exception occurred while closing the channel '{}': {}", datagramChannel, e.getMessage());
+        }
+
+        try {
+            listenerChannel.close();
+        } catch (IOException e) {
+            logger.error("An exception occurred while closing the listener channel on port number {} ({})",
+                    LISTENER_PORT_NUMBER, e.getMessage());
+        }
+
+        if (listeningJob != null && !listeningJob.isCancelled()) {
+            listeningJob.cancel(true);
+            listeningJob = null;
+        }
+
+        if (pollingJob != null && !pollingJob.isCancelled()) {
+            pollingJob.cancel(true);
+            pollingJob = null;
+        }
+
+        logger.debug("Handler disposed.");
     }
 
     /**
@@ -710,17 +781,53 @@ public class martHandler extends BaseThingHandler {
 
         @Override
         public void run() {
-            String requestCommand = "consumption data";
-
-            // create a byte buffer and allocate a capacity
-            ByteBuffer byteBuffer = ByteBuffer.allocate(requestCommand.getBytes().length);
             try {
-                // transfers the entire content of the byte array into the byteBuffer
-                byteBuffer.put(requestCommand.getBytes("ASCII"));
-                writer(byteBuffer, datagramChannel);
-            } catch (UnsupportedEncodingException | NumberFormatException e) {
-                logger.error("An exception occurred while polling the MART adapter for '{}': {}", getThing().getUID(),
-                        e.getMessage());
+
+                String requestUpdate = "Adapter Update";
+
+                // create a byte buffer and allocate a capacity
+                ByteBuffer byteBuffer = ByteBuffer.allocate(requestUpdate.getBytes().length);
+                try {
+                    // transfers the entire content of the byte array into the byteBuffer
+                    byteBuffer.put(requestUpdate.getBytes("ASCII"));
+                    writer(byteBuffer, datagramChannel);
+                } catch (UnsupportedEncodingException | NumberFormatException e) {
+                    logger.error("An exception occurred while polling the MART adapter for '{}': {}",
+                            getThing().getUID(), e.getMessage());
+                }
+
+                requestUpdate = "Fridge Update";
+                byteBuffer = ByteBuffer.allocate(requestUpdate.getBytes().length);
+                try {
+                    byteBuffer.put(requestUpdate.getBytes("ASCII"));
+                    writer(byteBuffer, datagramChannel);
+
+                } catch (UnsupportedEncodingException | NumberFormatException e) {
+
+                }
+
+                requestUpdate = "Television Update";
+                byteBuffer = ByteBuffer.allocate(requestUpdate.getBytes().length);
+                try {
+                    byteBuffer.put(requestUpdate.getBytes("ASCII"));
+                    writer(byteBuffer, datagramChannel);
+
+                } catch (UnsupportedEncodingException | NumberFormatException e) {
+
+                }
+
+                requestUpdate = "Outside Update";
+                byteBuffer = ByteBuffer.allocate(requestUpdate.getBytes().length);
+                try {
+                    byteBuffer = ByteBuffer.allocate(requestUpdate.getBytes("ASCII").length);
+                    writer(byteBuffer, datagramChannel);
+
+                } catch (UnsupportedEncodingException | NumberFormatException e) {
+
+                }
+
+            } catch (Exception e) {
+                // TODO: handle exception
             }
 
         }
